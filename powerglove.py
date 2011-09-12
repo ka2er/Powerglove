@@ -1,8 +1,9 @@
 import os, serial, rrdtool, time, BaseHTTPServer, socket
-import urlparse, cgi, ConfigParser, sys, re
+import urlparse, cgi, ConfigParser, sys, re, glob
 
 from xml.etree.ElementTree import fromstring
 from threading import Thread
+from ConfigParser import NoSectionError, NoOptionError
 
 config = ConfigParser.ConfigParser()
 config.read('powerglove.conf')
@@ -38,7 +39,6 @@ class LogThread (Thread):
         lastTime = 0
         while True:
             line = sio.readline()
-
             if line:
 
                 try:
@@ -129,6 +129,59 @@ class Server(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_error(404, 'Unknown Renderer')
 
 
+
+class PublishThread (Thread):
+    def __init__ (self):
+        Thread.__init__(self)
+
+    def run (self):
+
+        publishers = []
+
+
+        # collect publishers
+        files = glob.glob('Publishers/*Publisher.py')
+        for file in files:
+       
+            match = re.match('Publishers/(\w+)Publisher.py', file)
+            
+            try:
+            
+               if match and config.get(match.group(1).lower(), 'enabled'):
+                    moduleName = match.group(1) + 'Publisher'
+
+                    try:
+                        module = __import__('Publishers.' + moduleName)
+                        submodule = module.__getattribute__(moduleName)
+                        publisher = submodule.__getattribute__(moduleName)(self, config)
+
+                    except ImportError:
+                        publisher = None
+                        print "Unable to load module %s" % (moduleName)
+
+                    if publisher:
+                        try:
+                            publishers.append({'pub': publisher, 'refresh': publisher.refreshRate(), 'lastupdate':0})
+                        except:
+                            print "publisher %s doesn't implement refreshRate()" % (moduleName)
+            except NoSectionError:
+                pass
+            except NoOptionError:
+                pass
+          
+        # thread loop
+        while True:
+            now = int(time.time())
+            for dic in publishers:
+                # only publish at publisher refresh rate
+                if(dic['lastupdate'] + dic['refresh'] <= now):
+                    if(dic['pub'].publish(1, 2)):
+                        dic['lastupdate'] = now
+
+
+            time.sleep(1)
+
+
 log = LogThread()
 log.setDaemon(True)
 log.start()
@@ -137,6 +190,11 @@ server = ServerThread()
 server.setDaemon(True)
 server.start()
 
+publish = PublishThread()
+publish.setDaemon(True)
+publish.start()
+
 # So this thread can be killed, watch the threads rather than joining them
-while log.isAlive() and server.isAlive():
+while log.isAlive() and server.isAlive() and publish.isAlive():
+#while publish.isAlive():
     time.sleep(1)
