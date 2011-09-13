@@ -158,7 +158,7 @@ class PublishThread (Thread):
 
                     if publisher:
                         try:
-                            publishers.append({'pub': publisher, 'refresh': publisher.refreshRate(), 'lastupdate':0})
+                            publishers.append({'pub': publisher, 'refresh': publisher.refreshRate(), 'lastupdate':int(time.time())})
                         except:
                             print "publisher %s doesn't implement refreshRate()" % (moduleName)
             except NoSectionError:
@@ -173,11 +173,23 @@ class PublishThread (Thread):
                 if not xdic:
                     continue
                 # only publish at publisher refresh rate
-                if(xdic['lastupdate'] + xdic['refresh'] <= now):
-                    #print dic
-                    if(xdic['pub'].publish(1, 2)):
-                        xdic['lastupdate'] = now
+                refresh = max(6, xdic['refresh'])
+                if(xdic['lastupdate'] + refresh <= now):
 
+                    (metadata, titles, data) = rrdtool.fetch(
+                        rrdFile, 
+                        "--start", str(xdic['lastupdate']),
+                        "--end", str(xdic['lastupdate'] + refresh), 
+                        "AVERAGE"
+                    )
+                    
+                    watt = data[0][0]
+                    temp = data[0][1]
+
+                    if(watt and xdic['pub'].publish(watt, temp)):
+                        xdic['lastupdate'] += refresh
+
+                print publishers
 
             time.sleep(1)
 
