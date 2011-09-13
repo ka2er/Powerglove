@@ -14,7 +14,7 @@ class TsvRenderer (Renderer.Renderer):
             self.responseCode(200)
             self.contentType('text/plain; charset=utf-8')
 
-            print "Timestamp\tWatts\tTemp"
+            out = "Timestamp\tWatts\tTemp"
 
             timestamp = metadata[0]
             for item in data:
@@ -27,9 +27,11 @@ class TsvRenderer (Renderer.Renderer):
                 if second == None:
                     second = 0;
 
-                print "%d\t%f\t%f" % (timestamp, first, second)
+                out += "%d\t%f\t%f" % (timestamp, first, second)
 
                 timestamp = timestamp + metadata[2]
 
         except socket.error, e:
             pass
+
+        return out

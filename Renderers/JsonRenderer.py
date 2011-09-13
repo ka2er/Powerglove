@@ -33,13 +33,16 @@ class JsonRenderer (Renderer.Renderer):
             self.responseCode(200)
             self.contentType('application/x-javascript; charset=utf-8')
 
+            out = ""
             if 'jsonp' in params:
-                print "%s(" % (params['jsonp'][0])
+                out = "%s(" % (params['jsonp'][0])
 
-            print "{\"start\": %d, \"end\": %d, \"step\": %d, \"data\": [\n%s\n]}" % (metadata[0], metadata[1], metadata[2], ',\n'.join(dataStrings))
+            out += "{\"start\": %d, \"end\": %d, \"step\": %d, \"data\": [\n%s\n]}" % (metadata[0], metadata[1], metadata[2], ',\n'.join(dataStrings))
 
             if 'jsonp' in params:
-                print ');'
+                out += ');'
 
         except socket.error, e:
             pass
+
+        return out

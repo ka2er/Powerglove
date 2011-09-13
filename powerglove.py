@@ -117,13 +117,10 @@ class Server(BaseHTTPServer.BaseHTTPRequestHandler):
 
         if renderer:
 
-            stdout = sys.stdout
             try:
-                sys.stdout = self.wfile
-                renderer.render(startTime, endTime, params)
-                stdout = sys.stdout
+                self.wfile.write(renderer.render(startTime, endTime, params))
             finally:
-                sys.stdout = stdout
+                pass
 
         else:
             self.send_error(404, 'Unknown Renderer')
@@ -172,11 +169,14 @@ class PublishThread (Thread):
         # thread loop
         while True:
             now = int(time.time())
-            for dic in publishers:
+            for xdic in publishers:
+                if not xdic:
+                    continue
                 # only publish at publisher refresh rate
-                if(dic['lastupdate'] + dic['refresh'] <= now):
-                    if(dic['pub'].publish(1, 2)):
-                        dic['lastupdate'] = now
+                if(xdic['lastupdate'] + xdic['refresh'] <= now):
+                    #print dic
+                    if(xdic['pub'].publish(1, 2)):
+                        xdic['lastupdate'] = now
 
 
             time.sleep(1)
