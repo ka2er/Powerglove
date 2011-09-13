@@ -102,6 +102,30 @@ Mmmm, lovely Tab-seperated-values.
 And that's about it so far. All the output formats are plugins, it's simple to add new ones.
 
 
+Publishers
+----------
+
+Based on the original work I (ka2er) have added initial support to add external plotting hosting solution.
+
+In order to activate them you need to add a section in the config file with the publisher name
+and a key "Enabled" valued to true.
+
+Examples :
+
+[plotwatt]
+enabled = True
+
+[echo]
+enabled = True
+
+You can add other externals solutions.
+The refresh rate must be set in the plugin and must be expressed in seconds.
+
+Current plugins are :
+
+- echo : just echo the reading
+- plotwatt : send to your plotwatt.com account
+
 Example Apps
 ------------
 I've shoved a few quick example apps in /examples/

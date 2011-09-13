@@ -150,16 +150,19 @@ class PublishThread (Thread):
                     try:
                         module = __import__('Publishers.' + moduleName)
                         submodule = module.__getattribute__(moduleName)
-                        publisher = submodule.__getattribute__(moduleName)(self, config)
+                        publisher = submodule.__getattribute__(moduleName)(config)
 
-                    except ImportError:
+                    except (ImportError, NameError) as e:
                         publisher = None
                         print "Unable to load module %s" % (moduleName)
 
                     if publisher:
                         try:
+                            # the publisher could have updated the config
+                            with open('powerglove.conf', 'wb') as configfile:
+                                config.write(configfile)
                             publishers.append({'pub': publisher, 'refresh': publisher.refreshRate(), 'lastupdate':int(time.time())})
-                        except:
+                        except :
                             print "publisher %s doesn't implement refreshRate()" % (moduleName)
             except NoSectionError:
                 pass
@@ -186,10 +189,8 @@ class PublishThread (Thread):
                     watt = data[0][0]
                     temp = data[0][1]
 
-                    if(watt and xdic['pub'].publish(watt, temp)):
+                    if(watt and xdic['pub'].publish(xdic['lastupdate'], xdic['lastupdate']+refresh, watt, temp)):
                         xdic['lastupdate'] += refresh
-
-                print publishers
 
             time.sleep(1)
 
