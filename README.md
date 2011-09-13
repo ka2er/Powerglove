@@ -112,11 +112,11 @@ and a key "Enabled" valued to true.
 
 Examples :
 
-[plotwatt]
-enabled = True
+    [plotwatt]
+    enabled = True
 
-[echo]
-enabled = True
+    [echo]
+    enabled = True
 
 You can add other externals solutions.
 The refresh rate must be set in the plugin and must be expressed in seconds.
