@@ -41,10 +41,11 @@ class PlotwattPublisher :
 
     def publish(self, since, to, watt, temp):
         try:
+            kwatt = watt / 1000
             c = pycurl.Curl()
             c.setopt(c.POST, 1)
             c.setopt(c.URL, "http://%s:@plotwatt.com/api/v2/push_readings" % self.house_secret)
-            c.setopt(c.HTTPPOST, [("%s,%s,%s" % (self.meter_id, watt, since), "")])
+            c.setopt(c.POSTFIELDS, "%s,%s,%s" % (self.meter_id, kwatt, since))
             #c.setopt(c.VERBOSE, 1)
             c.perform()
             c.close()
