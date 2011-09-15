@@ -6,6 +6,8 @@ class MyEnerSavePublisher :
         try:
             self.token = config.get("myenersave", "token")
             self.push_url = config.get("myenersave", "push_url")
+            self.h_measures = {}
+            self.nb_call = 0
         except:
 
             try:
@@ -59,23 +61,40 @@ class MyEnerSavePublisher :
     def refreshRate(self):
         return 6
 
+
+    # max posting rate 1 POST/60sec
     def publish(self, since, to, watt, temp):
-        print "myenersave (token %s)" % self.token
-        return True
         try:
-            kwatt = watt / 1000
-            c = pycurl.Curl()
-            c.setopt(c.POST, 1)
-            c.setopt(c.URL, "http://%s:@plotwatt.com/api/v2/push_readings" % self.house_secret)
-            c.setopt(c.POSTFIELDS, "%s,%s,%s" % (self.meter_id, kwatt, since))
-            #c.setopt(c.VERBOSE, 1)
-            c.perform()
-            c.close()
+            self.nb_call += 1
+
+            # store data
+            self.h_measures[to] = watt
+
+            if(self.nb_call > 60/self.refreshRate()):
+                xml_data = ""
+                for ts, power in iter(sorted(self.h_measures.iteritems())):
+                    xml_data += "<energy time=\"%s\" wh=\"%s\"/>" % (ts, power)
+
+                xml = "<upload><sensor type=\"0\">%s</sensor></upload>" % xml_data
+
+                c = pycurl.Curl()
+                c.setopt(c.POST, 1)
+                c.setopt(c.URL, self.push_url)
+                c.setopt(c.HTTPHEADER,["Content-Type: application/xml", "token: %s" % self.token])
+                c.setopt(c.POSTFIELDS, xml)
+                #c.setopt(c.VERBOSE, 1)
+                c.perform()
+                ok = c.getinfo(c.HTTP_CODE)
+                c.close()
+                # 200 ?
+                if ok == 200:
+                    self.nb_call = 0
+                    self.h_measures.clear()
+
         except Exception as e:
             print e
-            print "Error occured while publishing on plotwatt.com :("
+            print "Error occured while publishing on myenersave.com :("
             return False
         
-        #print "POST curl -d %i,%f,%i http://%s@plotwatt.com/api/v2/push_readings" % (self.meter_id, watt, since, self.house_secret)
         print "Temperature (not supported) : %i" % temp
         return True
