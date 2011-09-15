@@ -118,6 +118,9 @@ Examples :
     [echo]
     enabled = True
 
+    [myenersave]
+    enabled = True
+
 You can add other externals solutions.
 The refresh rate must be set in the plugin and must be expressed in seconds.
 
@@ -125,6 +128,10 @@ Current plugins are :
 
 - echo : just echo the reading
 - plotwatt : send to your plotwatt.com account
+- myenersave : send to your myenersave.com account
+
+Don't hesitate to fork, develop your own plugin and pull request to get it merged !
+
 
 Example Apps
 ------------
